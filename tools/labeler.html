@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тахи — разметка частей тела</title>
+<style>
+:root{--ink:#17343a;--deep:#102f35;--muted:#64787a;--line:#c9d9d9;--gold:#e1b86d}
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 'Segoe UI',Arial,sans-serif;color:var(--ink);background:#f6f9f8}
+header{background:var(--deep);color:#fff;padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:19px;margin:0}header span{color:#a5c0bd;font-size:13px}
+main{max-width:1400px;margin:auto;padding:20px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:20px}
+aside{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px}
+aside h2{font-size:15px;margin:0 0 12px}
+aside button{display:block;width:100%;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:6px;background:#f1f7f5;cursor:pointer;font-weight:600}
+aside button.active{background:var(--deep);color:#fff}
+canvas{background:#fff;border:1px solid var(--line);border-radius:8px;max-width:100%;cursor:crosshair}
+.tools{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.tools button{padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer}
+.tools button.on{background:var(--gold)}
+.legend{display:grid;gap:6px;margin:14px 0}
+.legend span{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:8px;vertical-align:middle}
+.status{font-size:12px;color:var(--muted);margin-top:12px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header><h1>Тахи · разметка частей тела</h1><span id="counter">0 изображений</span></header>
+<main>
+  <aside>
+    <h2>Классы</h2>
+    <div class="legend"><div><span style="background:#d64b3c"></span>Уши (ears)</div><div><span style="background:#3a6fd8"></span>Ноги (legs)</div><div><span style="background:#3aa95c"></span>Тело (body)</div></div>
+    <button id="load-folder" class="active">Загрузить папку с фото</button>
+    <button id="load-json">Открыть labels.json</button>
+    <button id="prev" disabled>← Предыдущее</button>
+    <button id="next" disabled>Следующее →</button>
+    <button id="save-json">Скачать labels.json</button>
+    <div class="status" id="status">Загрузите папку с фотографиями. Обводите контуры: уши, ноги, тело.</div>
+  </aside>
+  <section>
+    <canvas id="canvas" width="900" height="600"></canvas>
+    <div class="tools">
+      <button id="tool-ears" class="on" data-class="ears">Уши</button>
+      <button id="tool-legs" data-class="legs">Ноги</button>
+      <button id="tool-body" data-class="body">Тело</button>
+      <button id="tool-undo">Отменить точку</button>
+      <button id="tool-close">Замкнуть контур</button>
+      <button id="tool-delete">Удалить контур</button>
+      <button id="tool-clear">Очистить фото</button>
+    </div>
+    <div class="status" id="hint">Левый клик — точка контура. Двойной клик или «Замкнуть контур» — завершить полигон.</div>
+  </section>
+</main>
+<input type="file" id="folder-input" webkitdirectory hidden>
+<input type="file" id="json-input" accept="application/json" hidden>
+<script>
+const $ = s => document.querySelector(s);
+const canvas = $('#canvas'); const ctx = canvas.getContext('2d');
+const COLORS = { ears: '#d64b3c', legs: '#3a6fd8', body: '#3aa95c' };
+let images = []; let index = 0; let img = null;
+let activeClass = 'ears'; let current = []; let labels = {};
+
+function status(text) { $('#status').textContent = text; }
+function loadImage(i) {
+  if (!images.length) return;
+  index = Math.max(0, Math.min(i, images.length - 1));
+  const file = images[index];
+  $('#counter').textContent = `${index + 1} / ${images.length} · ${file.name}`;
+  img = new Image();
+  img.onload = () => { current = labels[file.name] ? [...labels[file.name]] : []; draw(); };
+  img.src = URL.createObjectURL(file);
+  $('#prev').disabled = index === 0;
+  $('#next').disabled = index === images.length - 1;
+}
+function draw() {
+  const scale = Math.min(1, 900 / img.width, 600 / img.height);
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  for (const polygon of current) drawPolygon(polygon, true);
+  drawPolygon(currentPolygon(), false);
+}
+function currentPolygon() { return { className: activeClass, points: [] }; }
+function drawPolygon(polygon, fill) {
+  const pts = polygon.points.map(p => [p.x * canvas.width, p.y * canvas.height]);
+  if (!pts.length) return;
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (const [x, y] of pts.slice(1)) ctx.lineTo(x, y);
+  if (fill && pts.length > 2) { ctx.closePath(); ctx.fillStyle = COLORS[polygon.className] + '55'; ctx.fill(); }
+  ctx.strokeStyle = COLORS[polygon.className]; ctx.lineWidth = 2; ctx.stroke();
+  for (const [x, y] of pts) { ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fillStyle = COLORS[polygon.className]; ctx.fill(); }
+}
+function pending() { return current.find(p => p.className === activeClass && p.points.length); }
+function addPoint(event) {
+  if (!img) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (event.clientX - rect.left) / canvas.width;
+  const y = (event.clientY - rect.top) / canvas.height;
+  if (!pending()) current.push({ className: activeClass, points: [] });
+  pending().points.push({ x, y });
+  draw();
+}
+function closePolygon() {
+  const polygon = pending();
+  if (!polygon || polygon.points.length < 3) { status('Нужно минимум 3 точки.'); return; }
+  current.push({ className: activeClass, points: [] });
+  draw();
+}
+canvas.addEventListener('click', addPoint);
+canvas.addEventListener('dblclick', event => { addPoint(event); closePolygon(); });
+for (const button of document.querySelectorAll('.tools button[data-class]')) {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.tools button[data-class]').forEach(b => b.classList.remove('on'));
+    button.classList.add('on'); activeClass = button.dataset.class; closePolygon();
+  });
+}
+$('#tool-undo').addEventListener('click', () => { const polygon = pending() || current.at(-1); if (polygon) polygon.points.pop(); draw(); });
+$('#tool-close').addEventListener('click', closePolygon);
+$('#tool-delete').addEventListener('click', () => { const polygon = pending() || current.at(-1); if (polygon) current = current.filter(p => p !== polygon); draw(); });
+$('#tool-clear').addEventListener('click', () => { current = []; draw(); });
+$('#prev').addEventListener('click', () => { saveCurrent(); loadImage(index - 1); });
+$('#next').addEventListener('click', () => { saveCurrent(); loadImage(index + 1); });
+function saveCurrent() { if (img && images[index]) labels[images[index].name] = current; }
+$('#load-folder').addEventListener('click', () => $('#folder-input').click());
+$('#folder-input').addEventListener('change', event => {
+  images = [...event.target.files].filter(file => /\.(jpe?g|png|webp)$/i.test(file.name)).sort((a, b) => a.name.localeCompare(b.name));
+  labels = {}; current = [];
+  if (!images.length) return status('В папке нет изображений.');
+  status(`Загружено ${images.length} фото.`);
+  loadImage(0);
+});
+$('#load-json').addEventListener('click', () => $('#json-input').click());
+$('#json-input').addEventListener('change', event => {
+  const file = event.target.files[0];
+  file.text().then(text => { labels = JSON.parse(text); status(`Загружена разметка для ${Object.keys(labels).length} фото.`); loadImage(index); });
+});
+$('#save-json').addEventListener('click', () => {
+  saveCurrent();
+  const blob = new Blob([JSON.stringify(labels, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'labels.json'; a.click();
+  status('labels.json скачан. Загрузите его вместе с фото в Kaggle.');
+});
+</script>
+</body>
+</html>

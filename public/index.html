@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#05241b">
+  <title>ТАХИ · Казино лошадей — крупье-нейросеть</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" type="module"></script>
+  <script src="/fieldbook.js" type="module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">♞</span><span>ТАХИ<span class="brand-dot">.</span></span></div>
+    <div class="topbar-right"><span class="topbar-label">СКАЧКИ УДАЧИ · КРУПЬЕ-НЕЙРОСЕТЬ</span><span class="catalog-pill"><span class="live-dot"></span><span id="horse-count">0 особей в игре</span></span><span class="catalog-pill bank-pill">БАНК <span id="bank">1 000</span></span><button id="casino-toggle" class="outline-button casino-toggle" type="button">Режим: казино 🎰</button></div>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <div class="hero-index">♠ ♥ ТАХИ-КАЗИНО ♣ ♦ / Equus ferus przewalskii</div>
+        <h1 id="page-title">Ставьте на лошадь.<br>Крупье — <em>нейросеть</em>.</h1>
+        <p>Загрузите снимок — колесо фортуны закрутится, а модель определит вид и найдёт выигрышную особь в каталоге. Никаких гарантий, только азарт.</p>
+        <div class="hero-actions"><a class="primary-button" href="#identify">Сделать ставку <span aria-hidden="true">♞</span></a><a class="text-link" href="#catalog">Открыть конюшню <span aria-hidden="true">↓</span></a></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-grid"></div>
+        <svg viewBox="0 0 620 440" class="horse-art" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="body" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6b586"/><stop offset="1" stop-color="#9b764f"/></linearGradient></defs>
+          <path fill="#6c523b" d="M493 129l38-14 29 21-28 21-23-8z"/>
+          <path fill="#493c33" d="M383 179l23-60 25-46 15 32 8-18 17 26 15-6 16 39-19 14-22-4-23 31z"/>
+          <path fill="url(#body)" d="M128 199c23-40 78-61 143-52l95 9 42-41 20-24 53 4 23 48-21 21-44 4-32 50-8 58-30 26-54-4-48-27-62 8-72-17-18-38z"/>
+          <path fill="#6a5541" d="M413 113l16-40 15 26 12-26 15 39 14-11 8 27-41-9z"/>
+          <path fill="#b38e62" d="M472 131l30-1 19 24-27 19-31-5z"/>
+          <path fill="#453a33" d="M503 139l22 3 10 16-20 10-21-8z"/>
+          <circle cx="479" cy="125" r="3.6" fill="#1e2523"/>
+          <path fill="#735f49" d="M154 195c-25-14-41-38-43-69-13 24-12 50 9 73l-13 50 22 24 25-39z"/>
+          <path fill="#8e6c4b" d="M172 262l34 6-11 86-15 59-24 3 10-65zM278 267l29-1 1 90 20 60-22 2-34-59zM352 271l28 6-17 75 5 63-23 2-13-68zM393 248l21-28-2 121 11 72-25 3-13-76z"/>
+          <path fill="#493d35" d="M155 409h27l-2 12h-31zM305 410h25l6 11h-30zM344 409h25l5 12h-29zM397 409h27l5 12h-28z"/>
+          <path fill="#cda875" d="M230 161c-32 17-50 41-47 70 21 11 50 12 76 4 20-13 32-36 31-64z" opacity=".45"/>
+        </svg>
+        <div class="art-caption"><span>01 / 01</span><span>Вид под наблюдением</span></div>
+      </div>
+    </section>
+
+    <section class="workspace" id="identify" aria-labelledby="workspace-title">
+      <div class="section-heading"><div><span class="section-kicker">Игровой стол</span><h2 id="workspace-title">Сделайте ставку</h2></div><p>Загрузите фото — крупье выделит лошадей. Нажмите на рамку, чтобы поставить на конкретную особь.</p></div>
+      <div class="work-grid">
+        <div class="upload-panel">
+          <input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Выбрать фотографию">
+            <div class="drop-empty" id="drop-empty"><div class="upload-icon" aria-hidden="true"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 22V5m0 0-6 6m6-6 6 6M5 22v5h22v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><strong>Бросьте фото на стол</strong><span>или перетащите его сюда</span><small>Ставка принимается автоматически · JPG, PNG, WebP до 7 МБ</small></div>
+          </div>
+          <div id="photo-stage" hidden>
+            <div class="horse-frame">
+              <img id="preview" alt="Загруженная фотография">
+              <img id="parts-overlay" class="parts-overlay" alt="Сегментация частей тела" hidden>
+              <div id="horse-boxes" class="horse-boxes"></div>
+            </div>
+            <div id="horse-targets" class="horse-targets" role="group" aria-label="Найденные лошади" hidden></div>
+            <p id="photo-hint" class="method-label"></p>
+            <div class="photo-actions"><button id="change-photo" class="outline-button" type="button">Сменить ставку</button><button id="parts-button" class="outline-button" type="button" hidden>Части тела</button></div>
+          </div>
+          <button id="identify-button" class="primary-button wide" type="button" hidden disabled>Крутить снова <span aria-hidden="true">♞</span></button>
+          <div id="upload-message" class="form-message" role="status"></div>
+        </div>
+        <div class="result-panel" id="result-panel" aria-live="polite">
+          <div class="result-empty"><div class="roulette" aria-hidden="true"><div class="roulette-pin"></div><div class="roulette-wheel" id="roulette-wheel"></div><div class="roulette-hub"></div></div><h3>Ставок пока нет</h3><p>Колесо ждёт. Загрузите фото — и крупье запустит барабан, чтобы найти выигрышную особь.</p></div>
+        </div>
+      </div>
+      <p class="method-note"><strong>Правила стола.</strong> Решение принимает нейросеть-крупье. Она всё ещё ошибается на ослах и пропускает отдельные снимки лошадей Пржевальского. Играйте ответственно: точность конкретной особи пока не измерена.</p>
+    </section>
+
+    <section class="catalog-section" id="catalog" aria-labelledby="catalog-title">
+      <div class="section-heading catalog-heading"><div><span class="section-kicker">Конюшня</span><h2 id="catalog-title">Скаковые особи <span id="catalog-number" class="title-count">00</span></h2></div><button class="outline-button" id="add-horse" type="button" hidden>Добавить особь <span aria-hidden="true">＋</span></button></div>
+      <div id="catalog-grid" class="catalog-grid"></div>
+    </section>
+  </main>
+
+  <footer><span>ТАХИ<span class="brand-dot">.</span></span><span>Казино-каталог лошадей Пржевальского · 18+ · играйте ответственно</span><span>Данные хранятся на этом сервере</span></footer>
+
+  <dialog id="horse-dialog" class="horse-dialog"><form id="horse-form" method="dialog"><div class="dialog-head"><div><span class="section-kicker">Запись в каталоге</span><h2 id="dialog-title">Добавить особь</h2></div><button class="close-button" type="button" id="close-dialog" aria-label="Закрыть">×</button></div><p id="dialog-description">Добавьте имя или полевой номер и опорный снимок. Позже можно добавить другие ракурсы.</p><label>Имя или полевой номер<input id="horse-name" maxlength="80" required placeholder="Например, ТХ-017"></label><label>Примечания<textarea id="horse-notes" maxlength="500" rows="3" placeholder="Приметы, участок наблюдения, дата…"></textarea></label><label class="file-label">Фотография<input id="horse-photo" type="file" accept="image/jpeg,image/png,image/webp" required><span id="horse-file-name">Выбрать снимок</span></label><div class="dialog-actions"><span id="dialog-message" role="status"></span><button id="save-horse" class="primary-button" type="submit">Сохранить запись</button></div></form></dialog>
+
+  <dialog id="timeline-dialog" class="horse-dialog timeline-dialog">
+    <div class="dialog-head"><div><span class="section-kicker">Хронология наблюдений</span><h2 id="timeline-title">Особь</h2></div><button class="close-button" type="button" id="close-timeline" aria-label="Закрыть">×</button></div>
+    <p id="timeline-notes"></p>
+    <div id="timeline-body" class="timeline-body"></div>
+  </dialog>
+
+  <section class="catalog-section growth" id="growth" hidden aria-labelledby="growth-title">
+    <div class="section-heading catalog-heading">
+      <div><h2 id="growth-title">Дневник взросления</h2><p>Сравните одну лошадь на двух датах съёмки.</p></div>
+      <label>Особь <select id="growth-horse"></select></label>
+    </div>
+    <div id="growth-empty" class="catalog-empty" hidden>Добавьте датированные фотографии особи в каталог.</div>
+    <div id="growth-controls" hidden>
+      <div class="growth-toolbar">
+        <label>На снимке <select id="growth-part"><option value="all">Все части тела</option><option value="ears">Уши</option><option value="legs">Ноги</option><option value="body">Корпус</option><option value="none">Без масок</option></select></label>
+        <p id="growth-interval"></p>
+      </div>
+      <div class="growth-pair">
+        <div id="growth-first"></div>
+        <div id="growth-second"></div>
+      </div>
+      <section id="growth-editor" hidden aria-labelledby="growth-edit-title">
+        <h3 id="growth-edit-title">Разметка частей тела</h3>
+        <p>Обведите видимую часть лошади точками и замкните контур. Для каждой ноги или уха можно добавить отдельный контур.</p>
+        <div id="growth-edit-image" class="growth-image"></div>
+        <div class="growth-toolbar">
+          <label>Часть <select id="growth-edit-part"><option value="ears">Уши</option><option value="legs">Ноги</option><option value="body">Корпус</option></select></label>
+          <button class="outline-button" type="button" id="growth-close-polygon">Замкнуть контур</button>
+          <button class="outline-button" type="button" id="growth-undo">Отменить точку или контур</button>
+          <button class="primary-button" type="button" id="growth-save">Сохранить разметку</button>
+          <button class="subtle-button" type="button" id="growth-cancel">Закрыть разметку</button>
+        </div>
+        <p id="growth-note" role="status"></p>
+      </section>
+    </div>
+    <p id="growth-source" class="method-note"></p>
+  </section>
+
+  <dialog id="pedigree-dialog" class="horse-dialog lineage-dialog" aria-labelledby="pedigree-title">
+    <div class="dialog-head"><h2 id="pedigree-title"></h2><button id="pedigree-close" type="button" class="close-button" aria-label="Закрыть карточку">×</button></div>
+    <p id="pedigree-dates"></p>
+    <div id="pedigree-family"></div>
+    <section id="pedigree-foals" aria-labelledby="pedigree-foals-title"><h3 id="pedigree-foals-title">Фотографии в детстве</h3><div id="pedigree-gallery"></div></section>
+    <details id="pedigree-edit" hidden>
+      <summary>Редактировать даты и родство</summary>
+      <form id="pedigree-form">
+        <div class="pedigree-fields">
+          <label>Пол <select name="sex"><option value="">Неизвестно</option><option value="female">Кобыла</option><option value="male">Жеребец</option></select></label>
+          <label>Дата рождения <input type="date" name="birthOn"></label>
+          <label>Мать <select name="motherId"></select></label>
+          <label>Отец <select name="fatherId"></select></label>
+          <label>Статус <select name="status"><option value="catalog">В каталоге</option><option value="deceased">В мемориале</option></select></label>
+          <label>Дата смерти <input type="date" name="deathOn"></label>
+        </div>
+        <fieldset><legend>Зафиксированные пары</legend><div id="pedigree-partners"></div></fieldset>
+        <div class="dialog-actions"><span id="pedigree-status" role="status"></span><button type="submit" class="primary-button">Сохранить карточку</button></div>
+      </form>
+    </details>
+  </dialog>
+
+  <div id="fx-overlay" class="fx-overlay" hidden aria-hidden="true">
+    <canvas id="fx-canvas"></canvas>
+    <div id="bomb-flash" class="bomb-flash"></div>
+    <div class="fx-card" id="fx-card">
+      <div class="fx-title" id="fx-title">ДЖЕКПОТ!</div>
+      <div class="fx-sub" id="fx-sub"></div>
+      <div class="fx-chips-row" aria-hidden="true"><span>♠</span><span>♥</span><span>♣</span><span>♦</span></div>
+    </div>
+    <div class="fx-close-hint">нажмите, чтобы закрыть</div>
+  </div>
+</body>
+</html>

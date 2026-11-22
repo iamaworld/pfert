@@ -1,0 +1,6 @@
+torch>=2.4,<3
+torchvision>=0.19,<1
+timm>=1.0,<2
+pillow>=11,<13
+huggingface_hub>=0.30,<2
+ultralytics>=8.4,<9

@@ -1,0 +1,11 @@
+data/
+.venv/
+datasets/
+__pycache__/
+*.pyc
+.DS_Store
+*.zip
+.reasonix/
+_pferd_review/
+node_modules/
+*.tmp
